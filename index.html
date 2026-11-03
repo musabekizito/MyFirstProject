@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173f35">
+  <title>Online Banking System - Design</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c2923;
+      --muted: #68756c;
+      --paper: #eef0e9;
+      --surface: #fffefa;
+      --line: #d8ded4;
+      --green: #245643;
+      --green-dark: #16392d;
+      --green-soft: #e5eee5;
+      --coral: #d56a4c;
+      --gold: #d6e579;
+      --shadow: 0 14px 36px rgb(20 43 32 / 8%);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    a { color: inherit; }
+
+    .topbar {
+      background: var(--surface);
+      color: var(--ink);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topbar-inner, main, .footer-inner {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .topbar-inner {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      font-size: 13px;
+      font-weight: 750;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .topbar nav { display: flex; gap: 22px; }
+    .topbar nav a { font-size: 12px; text-decoration: none; color: var(--muted); }
+    .topbar nav a:hover { color: var(--green); text-decoration: underline; }
+
+    main { padding: 46px 0 64px; }
+
+    .page-heading {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 24px;
+      padding: 38px 42px;
+      border-bottom: 5px solid var(--gold);
+      background: var(--green-dark);
+      color: var(--surface);
+    }
+
+    .eyebrow, .section-kicker {
+      margin: 0 0 8px;
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; }
+    h1 { margin-bottom: 0; font-size: 48px; line-height: 1.08; font-weight: 500; }
+
+    .course-mark {
+      border: 1px solid rgb(255 255 255 / 35%);
+      padding: 12px 15px;
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-align: center;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .design-section { padding-top: 46px; scroll-margin-top: 18px; }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 17px;
+    }
+
+    .section-number {
+      display: grid;
+      width: 36px;
+      height: 30px;
+      place-items: center;
+      background: var(--gold);
+      color: var(--green-dark);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    h2 { margin: 0; font-size: 27px; font-weight: 500; }
+    h3 { margin-bottom: 8px; font-size: 18px; font-weight: 500; }
+    .diagram-frame {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      border-radius: 3px;
+      scrollbar-color: #9eafa2 #edf0e9;
+    }
+
+    .erd-svg { display: block; width: 100%; min-width: 850px; height: auto; }
+    .sequence-svg { display: block; width: 100%; min-width: 850px; height: auto; }
+
+    .erd-svg .entity { fill: #fffefa; stroke: #245c4b; stroke-width: 2; }
+    .erd-svg .weak-outer { fill: #fffefa; stroke: #c7614c; stroke-width: 2; }
+    .erd-svg .weak-inner { fill: none; stroke: #c7614c; stroke-width: 1.4; }
+    .erd-svg .entity-head { fill: #e8f1e9; }
+    .erd-svg .weak-head { fill: #f8ebe6; }
+    .erd-svg .entity-title { fill: #173f35; font: 700 16px "Segoe UI", sans-serif; }
+    .erd-svg .weak-title { fill: #9d4937; font: 700 16px "Segoe UI", sans-serif; }
+    .erd-svg .attribute { fill: #34443c; font: 13px "Segoe UI", sans-serif; }
+    .erd-svg .key { fill: #245c4b; font-weight: 700; }
+    .erd-svg .link { fill: none; stroke: #809187; stroke-width: 1.8; }
+    .erd-svg .diamond { fill: #fffefa; stroke: #809187; stroke-width: 1.6; }
+    .erd-svg .diamond-label { fill: #33443b; font: 700 11px "Segoe UI", sans-serif; text-anchor: middle; }
+    .erd-svg .cardinality { fill: #173f35; font: 700 12px "Segoe UI", sans-serif; }
+    .erd-svg .guide { fill: #64716b; font: 12px "Segoe UI", sans-serif; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend strong { color: var(--ink); }
+    .loan-demo {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(230px, .8fr);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .loan-tabs { display: flex; gap: 5px; padding: 8px; border: 1px solid var(--line); border-bottom: 0; background: #e7ebe3; }
+    .loan-tab { flex: 1; min-height: 42px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .loan-tab[aria-selected="true"] { background: var(--surface); color: var(--green-dark); box-shadow: 0 2px 6px rgb(20 43 32 / 8%); }
+    .loan-screen { min-height: 340px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+    .loan-screen[hidden] { display: none; }
+    .loan-screen-content { padding: 28px 30px; }
+    .screen-topline { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .screen-topline h3 { margin: 0; font-size: 22px; }
+    .screen-kicker { margin: 0 0 5px; color: var(--coral); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .screen-index { color: var(--muted); font-size: 11px; }
+    .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+    .product-card { min-height: 158px; padding: 18px; border: 1px solid var(--line); background: #fff; }
+    .product-card.selected { border: 2px solid var(--green); background: #f0f5ed; }
+    .product-index { color: var(--coral); font-size: 10px; font-weight: 800; }
+    .product-card h4 { margin: 14px 0 5px; color: var(--green-dark); font-family: Georgia, "Times New Roman", serif; font-size: 19px; font-weight: 500; }
+    .product-card p { margin: 0; color: var(--muted); font-size: 11px; }
+    .loan-screen-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 21px; }
+    .review-layout { display: grid; grid-template-columns: 1fr 240px; gap: 24px; }
+    .review-list { margin: 0; }
+    .review-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .review-row dt { color: var(--muted); }
+    .review-row dd { margin: 0; color: var(--ink); font-weight: 700; text-align: right; }
+    .review-total { padding: 20px; background: #edf2e9; }
+    .review-total span { display: block; color: var(--muted); font-size: 11px; }
+    .review-total strong { display: block; margin-top: 6px; color: var(--green-dark); font-family: Georgia, "Times New Roman", serif; font-size: 25px; font-weight: 500; }
+    .confirmation { max-width: 720px; margin: 0 auto; padding: 35px 28px; }
+    .confirmation-mark { display: grid; width: 48px; height: 48px; place-items: center; margin-bottom: 18px; background: var(--green-soft); color: var(--green); font-size: 22px; font-weight: 700; }
+    .confirmation h3 { margin-bottom: 5px; font-size: 25px; }
+    .reference-number { margin: 14px 0 22px; color: var(--green); font-size: 13px; font-weight: 800; }
+    .status-track { display: grid; grid-template-columns: repeat(3, 1fr); margin: 24px 0 0; padding: 0; list-style: none; }
+    .status-track li { position: relative; padding-top: 20px; border-top: 2px solid var(--line); color: var(--muted); font-size: 11px; }
+    .status-track li::before { position: absolute; top: -6px; left: 0; width: 10px; height: 10px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); content: ""; }
+    .status-track li.done { border-color: var(--green); color: var(--green); }
+    .status-track li.done::before { border-color: var(--green); background: var(--green); }
+
+    .loan-form { padding: 27px 30px 30px; }
+    .loan-form-header { display: flex; justify-content: space-between; gap: 16px; align-items: start; margin-bottom: 22px; }
+    .loan-form-header h3 { margin-bottom: 4px; font-size: 22px; }
+    .secure-mark { padding: 5px 8px; background: var(--green-soft); color: var(--green); font-size: 10px; font-weight: 700; white-space: nowrap; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { color: #3e4b43; font-size: 12px; font-weight: 700; }
+    .field input, .field select {
+      width: 100%; min-height: 42px; padding: 9px 11px;
+      border: 1px solid #cbd4ca; border-radius: 2px;
+      background: white; color: var(--ink); font: inherit; font-size: 13px;
+    }
+    .field input:focus, .field select:focus { outline: 2px solid #8eaf91; outline-offset: 1px; }
+    .form-actions { display: flex; align-items: center; gap: 15px; margin-top: 21px; }
+    .primary-button, .quiet-button { min-height: 41px; padding: 0 16px; border: 0; border-radius: 2px; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+    .primary-button { background: var(--green); color: white; }
+    .primary-button:hover { background: var(--green-dark); }
+    .quiet-button { background: transparent; color: var(--muted); }
+    .loan-summary { padding: 28px 24px; background: #edf2e9; border-left: 1px solid var(--line); }
+    .summary-label { margin-bottom: 14px; color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .summary-amount { margin-bottom: 4px; color: var(--green-dark); font-family: Georgia, "Times New Roman", serif; font-size: 31px; }
+    .summary-row { display: flex; justify-content: space-between; gap: 10px; padding: 11px 0; border-top: 1px solid #d5dfd3; font-size: 12px; }
+    .summary-row span { color: var(--muted); }
+    .summary-row strong { text-align: right; }
+    .sequence-svg .actor { fill: #fffefa; stroke: #245c4b; stroke-width: 1.5; }
+    .sequence-svg .actor-text { fill: #173f35; font: 700 12px "Segoe UI", sans-serif; text-anchor: middle; }
+    .sequence-svg .lifeline { stroke: #a7b3a8; stroke-width: 1.2; stroke-dasharray: 5 5; }
+    .sequence-svg .message { stroke: #344b3e; stroke-width: 1.5; fill: none; }
+    .sequence-svg .reply { stroke: #819087; stroke-width: 1.4; stroke-dasharray: 5 4; fill: none; }
+    .sequence-svg .msg-label { fill: #293a31; font: 12px "Segoe UI", sans-serif; }
+    .sequence-svg .step { fill: #c7614c; font: 700 11px "Segoe UI", sans-serif; }
+    footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .footer-inner { padding: 17px 0 24px; display: flex; justify-content: space-between; gap: 16px; }
+
+    @media (max-width: 680px) {
+      .topbar-inner, main, .footer-inner { width: min(100% - 28px, 1120px); }
+      .topbar-inner { min-height: 50px; }
+      .topbar nav { gap: 11px; }
+      .topbar nav a { font-size: 10px; }
+      main { padding-top: 32px; }
+      .page-heading { grid-template-columns: 1fr; gap: 15px; padding: 30px 24px; }
+      h1 { font-size: 38px; }
+      .course-mark { justify-self: start; }
+      .design-section { padding-top: 36px; }
+      .loan-demo { grid-template-columns: 1fr; }
+      .loan-form { padding: 22px 18px; }
+      .loan-summary { border-top: 1px solid var(--line); border-left: 0; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .loan-tabs { gap: 2px; padding: 4px; }
+      .loan-tab { padding: 0 4px; font-size: 10px; }
+      .loan-screen-content { padding: 21px 17px; }
+      .product-grid { grid-template-columns: 1fr; }
+      .product-card { min-height: 0; }
+      .review-layout { grid-template-columns: 1fr; }
+      .confirmation { padding: 25px 18px; }
+      .footer-inner { flex-direction: column; gap: 4px; }
+    }
+
+    @media print {
+      body { background: white; }
+      .topbar nav { display: none; }
+      main { width: 100%; padding: 20px; }
+      .diagram-frame, .loan-demo { box-shadow: none; break-inside: avoid; }
+      .design-section { break-inside: avoid; }
+      .primary-button, .quiet-button { print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">Citizen Bank <span aria-hidden="true">/</span> System Design</div>
+      <nav aria-label="Page sections">
+        <a href="#erd">ER diagram</a>
+        <a href="#interface">Loan interface</a>
+        <a href="#sequence">Sequence</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">Online banking</p>
+        <h1>Online Banking System</h1>
+      </div>
+      <div class="course-mark">Rwanda Polytechnic<br>Ngoma College</div>
+    </header>
+
+    <section class="design-section" id="erd" aria-labelledby="erd-title">
+      <div class="section-heading">
+        <span class="section-number">01</span>
+        <h2 id="erd-title">ER diagram</h2>
+      </div>
+
+      <div class="diagram-frame">
+        <svg class="erd-svg" viewBox="0 0 1200 560" role="img" aria-labelledby="erd-svg-title erd-svg-desc">
+          <title id="erd-svg-title">Online banking entity relationship diagram</title>
+          <desc id="erd-svg-desc">A customer owns accounts and borrows loans. A branch opens accounts and issues loans. A loan identifies its weak Payment entity.</desc>
+          <defs>
+            <marker id="erd-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#344b3e" /></marker>
+          </defs>
+
+          <path class="link" d="M245 265 H650" />
+          <path class="link" d="M530 134 L650 214" />
+          <path class="link" d="M425 225 V375" />
+          <path class="link" d="M245 315 L320 430" />
+          <path class="link" d="M860 265 H970" />
+
+          <text class="cardinality" x="255" y="253">1</text><text class="cardinality" x="630" y="253">N</text>
+          <text class="cardinality" x="539" y="142">1</text><text class="cardinality" x="638" y="210">N</text>
+          <text class="cardinality" x="435" y="244">1</text><text class="cardinality" x="435" y="366">N</text>
+          <text class="cardinality" x="250" y="324">1</text><text class="cardinality" x="307" y="420">N</text>
+          <text class="cardinality" x="866" y="253">1</text><text class="cardinality" x="953" y="253">N</text>
+
+          <polygon class="diamond" points="450,241 493,265 450,289 407,265" />
+          <text class="diamond-label" x="450" y="269">borrows</text>
+          <polygon class="diamond" points="590,151 628,174 590,197 552,174" />
+          <text class="diamond-label" x="590" y="178">issues</text>
+          <polygon class="diamond" points="425,275 462,300 425,325 388,300" />
+          <text class="diamond-label" x="425" y="304">opens</text>
+          <polygon class="diamond" points="282,351 316,375 282,399 248,375" />
+          <text class="diamond-label" x="282" y="379">owns</text>
+          <polygon class="diamond" points="915,242 951,265 915,288 879,265" />
+          <text class="diamond-label" x="915" y="262">identifies</text>
+          <text class="guide" x="884" y="311">identifying relationship</text>
+
+          <g aria-label="Customer entity">
+            <rect class="entity" x="35" y="185" width="210" height="180" />
+            <rect class="entity-head" x="36" y="186" width="208" height="38" />
+            <text class="entity-title" x="52" y="211">CUSTOMER</text>
+            <text class="attribute key" x="52" y="249">PK  CustomerID</text>
+            <text class="attribute" x="52" y="275">FullName</text>
+            <text class="attribute" x="52" y="301">Phone</text>
+            <text class="attribute" x="52" y="327">Address</text>
+          </g>
+
+          <g aria-label="Branch entity">
+            <rect class="entity" x="320" y="45" width="210" height="180" />
+            <rect class="entity-head" x="321" y="46" width="208" height="38" />
+            <text class="entity-title" x="337" y="71">BRANCH</text>
+            <text class="attribute key" x="337" y="109">PK  BranchID</text>
+            <text class="attribute" x="337" y="135">BranchName</text>
+            <text class="attribute" x="337" y="161">Location</text>
+          </g>
+
+          <g aria-label="Account entity">
+            <rect class="entity" x="320" y="375" width="210" height="165" />
+            <rect class="entity-head" x="321" y="376" width="208" height="38" />
+            <text class="entity-title" x="337" y="401">ACCOUNT</text>
+            <text class="attribute key" x="337" y="439">PK  AccountNo</text>
+            <text class="attribute" x="337" y="465">AccountType</text>
+            <text class="attribute" x="337" y="491">Balance</text>
+            <text class="attribute" x="337" y="517">OpenDate</text>
+          </g>
+
+          <g aria-label="Loan entity">
+            <rect class="entity" x="650" y="185" width="210" height="180" />
+            <rect class="entity-head" x="651" y="186" width="208" height="38" />
+            <text class="entity-title" x="667" y="211">LOAN</text>
+            <text class="attribute key" x="667" y="249">PK  LoanID</text>
+            <text class="attribute" x="667" y="275">Amount</text>
+            <text class="attribute" x="667" y="301">InterestRate</text>
+            <text class="attribute" x="667" y="327">Status</text>
+          </g>
+
+          <g aria-label="Payment weak entity">
+            <rect class="weak-outer" x="970" y="185" width="210" height="180" />
+            <rect class="weak-inner" x="976" y="191" width="198" height="168" />
+            <rect class="weak-head" x="977" y="192" width="196" height="38" />
+            <text class="weak-title" x="993" y="217">PAYMENT · WEAK</text>
+            <text class="attribute key" x="993" y="255">PK, FK  LoanID</text>
+            <text class="attribute key" x="993" y="281">Partial key  PaymentNo</text>
+            <text class="attribute" x="993" y="307">PaymentDate</text>
+            <text class="attribute" x="993" y="333">AmountPaid</text>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><strong>PK</strong> primary key</span>
+          <span><strong>FK</strong> foreign key</span>
+          <span><strong>1 : N</strong> one-to-many</span>
+          <span><strong>Double border</strong> weak entity</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="design-section" id="interface" aria-labelledby="interface-title">
+      <div class="section-heading">
+        <span class="section-number">02</span>
+        <h2 id="interface-title">Loan borrowing</h2>
+      </div>
+
+      <div class="loan-tabs" role="tablist" aria-label="Loan application screens">
+        <button class="loan-tab" id="tab-overview" type="button" role="tab" aria-selected="true" aria-controls="screen-overview" data-screen="overview">01 Overview</button>
+        <button class="loan-tab" id="tab-application" type="button" role="tab" aria-selected="false" aria-controls="screen-application" data-screen="application">02 Application</button>
+        <button class="loan-tab" id="tab-review" type="button" role="tab" aria-selected="false" aria-controls="screen-review" data-screen="review">03 Review</button>
+        <button class="loan-tab" id="tab-status" type="button" role="tab" aria-selected="false" aria-controls="screen-status" data-screen="status">04 Status</button>
+      </div>
+
+      <section class="loan-screen" id="screen-overview" role="tabpanel" aria-labelledby="tab-overview">
+        <div class="loan-screen-content">
+          <div class="screen-topline">
+            <div><p class="screen-kicker">Choose a loan</p><h3>Loan products</h3></div>
+            <span class="screen-index">01 / 04</span>
+          </div>
+          <div class="product-grid">
+            <article class="product-card selected"><span class="product-index">01</span><h4>Personal</h4><p>Personal expenses</p></article>
+            <article class="product-card"><span class="product-index">02</span><h4>Business</h4><p>Business support</p></article>
+            <article class="product-card"><span class="product-index">03</span><h4>Education</h4><p>Education costs</p></article>
+          </div>
+          <div class="loan-screen-actions"><button class="primary-button" type="button" data-open-screen="application">Apply for a loan</button></div>
+        </div>
+      </section>
+
+      <section class="loan-screen" id="screen-application" role="tabpanel" aria-labelledby="tab-application" hidden>
+        <div class="loan-screen-content">
+          <div class="screen-topline">
+            <div><p class="screen-kicker">Personal loan</p><h3>Application details</h3></div>
+            <span class="screen-index">02 / 04</span>
+          </div>
+          <form id="loan-form">
+            <div class="form-grid">
+              <div class="field">
+                <label for="customer-id">Customer ID</label>
+                <input id="customer-id" name="customer-id" type="text" placeholder="Customer ID" required>
+              </div>
+              <div class="field">
+                <label for="account">Account</label>
+                <select id="account" name="account" required>
+                  <option value="">Select account</option>
+                  <option>Savings ···· 2841</option>
+                  <option>Current ···· 9073</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="amount">Loan amount (RWF)</label>
+                <input id="amount" name="amount" type="number" min="10000" step="5000" placeholder="500000" required>
+              </div>
+              <div class="field">
+                <label for="term">Repayment period</label>
+                <select id="term" name="term" required>
+                  <option value="">Select period</option>
+                  <option>6 months</option>
+                  <option>12 months</option>
+                  <option>24 months</option>
+                  <option>36 months</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label for="purpose">Purpose</label>
+                <select id="purpose" name="purpose" required>
+                  <option value="">Select purpose</option>
+                  <option>Education</option>
+                  <option>Business</option>
+                  <option>Home improvement</option>
+                  <option>Personal needs</option>
+                </select>
+              </div>
+            </div>
+            <div class="loan-screen-actions"><button class="primary-button" type="submit">Continue to review</button></div>
+          </form>
+        </div>
+      </section>
+
+      <section class="loan-screen" id="screen-review" role="tabpanel" aria-labelledby="tab-review" hidden>
+        <div class="loan-screen-content">
+          <div class="screen-topline">
+            <div><p class="screen-kicker">Personal loan</p><h3>Review application</h3></div>
+            <span class="screen-index">03 / 04</span>
+          </div>
+          <div class="review-layout">
+            <dl class="review-list">
+              <div class="review-row"><dt>Customer ID</dt><dd id="review-customer">—</dd></div>
+              <div class="review-row"><dt>Account</dt><dd id="review-account">—</dd></div>
+              <div class="review-row"><dt>Repayment period</dt><dd id="review-term">—</dd></div>
+              <div class="review-row"><dt>Purpose</dt><dd id="review-purpose">—</dd></div>
+            </dl>
+            <aside class="review-total"><span>Loan amount</span><strong id="review-amount">RWF 0</strong></aside>
+          </div>
+          <div class="loan-screen-actions">
+            <button class="quiet-button" type="button" data-open-screen="application">Edit details</button>
+            <button class="primary-button" id="confirm-loan" type="button">Confirm request</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="loan-screen" id="screen-status" role="tabpanel" aria-labelledby="tab-status" hidden>
+        <div class="confirmation">
+          <div class="confirmation-mark" aria-hidden="true">✓</div>
+          <p class="screen-kicker">Request submitted</p>
+          <h3>Application received</h3>
+          <p class="reference-number">Reference: <span id="loan-reference">LN-000000</span></p>
+          <div class="summary-row"><span>Loan amount</span><strong id="status-amount">RWF 0</strong></div>
+          <ul class="status-track" aria-label="Application status">
+            <li class="done">Submitted</li><li>Under review</li><li>Decision</li>
+          </ul>
+          <div class="loan-screen-actions"><button class="quiet-button" id="new-loan" type="button">New application</button></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="design-section" id="sequence" aria-labelledby="sequence-title">
+      <div class="section-heading">
+        <span class="section-number">03</span>
+        <h2 id="sequence-title">Sequence diagram</h2>
+      </div>
+
+      <div class="diagram-frame">
+        <svg class="sequence-svg" viewBox="0 0 1120 620" role="img" aria-labelledby="sequence-svg-title sequence-svg-desc">
+          <title id="sequence-svg-title">Sequence diagram for a customer loan request</title>
+          <desc id="sequence-svg-desc">The customer submits a request through the web app. The loan service validates the account, saves a pending application, sends it to branch staff for review, and returns the status.</desc>
+          <defs>
+            <marker id="seq-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#344b3e" /></marker>
+            <marker id="seq-reply-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#819087" /></marker>
+          </defs>
+          <rect class="actor" x="25" y="24" width="170" height="42" />
+          <rect class="actor" x="250" y="24" width="170" height="42" />
+          <rect class="actor" x="475" y="24" width="170" height="42" />
+          <rect class="actor" x="700" y="24" width="170" height="42" />
+          <rect class="actor" x="925" y="24" width="170" height="42" />
+          <text class="actor-text" x="110" y="50">Customer</text>
+          <text class="actor-text" x="335" y="50">Online banking UI</text>
+          <text class="actor-text" x="560" y="50">Loan service</text>
+          <text class="actor-text" x="785" y="50">Bank database</text>
+          <text class="actor-text" x="1010" y="50">Branch officer</text>
+
+          <path class="lifeline" d="M110 66 V600" />
+          <path class="lifeline" d="M335 66 V600" />
+          <path class="lifeline" d="M560 66 V600" />
+          <path class="lifeline" d="M785 66 V600" />
+          <path class="lifeline" d="M1010 66 V600" />
+
+          <text class="step" x="22" y="105">1</text>
+          <path class="message" d="M110 110 H335" marker-end="url(#seq-arrow)" />
+          <text class="msg-label" x="170" y="101">Enter loan details and submit</text>
+
+          <text class="step" x="22" y="157">2</text>
+          <path class="message" d="M335 162 H560" marker-end="url(#seq-arrow)" />
+          <text class="msg-label" x="387" y="153">Send application details</text>
+
+          <text class="step" x="22" y="209">3</text>
+          <path class="message" d="M560 214 H785" marker-end="url(#seq-arrow)" />
+          <text class="msg-label" x="594" y="205">Check customer and account</text>
+
+          <text class="step" x="22" y="261">4</text>
+          <path class="reply" d="M785 266 H560" marker-end="url(#seq-reply-arrow)" />
+          <text class="msg-label" x="615" y="257">Return account details</text>
+
+          <text class="step" x="22" y="313">5</text>
+          <path class="message" d="M560 318 H785" marker-end="url(#seq-arrow)" />
+          <text class="msg-label" x="606" y="309">Save application as Pending</text>
+
+          <text class="step" x="22" y="365">6</text>
+          <path class="reply" d="M785 370 H560" marker-end="url(#seq-reply-arrow)" />
+          <text class="msg-label" x="610" y="361">Return application ID</text>
+
+          <text class="step" x="22" y="417">7</text>
+          <path class="message" d="M560 422 H1010" marker-end="url(#seq-arrow)" />
+          <text class="msg-label" x="693" y="413">Add application to review queue</text>
+
+          <text class="step" x="22" y="469">8</text>
+          <path class="reply" d="M1010 474 H560" marker-end="url(#seq-reply-arrow)" />
+          <text class="msg-label" x="674" y="465">Record approval or rejection</text>
+
+          <text class="step" x="22" y="521">9</text>
+          <path class="reply" d="M560 526 H335" marker-end="url(#seq-reply-arrow)" />
+          <text class="msg-label" x="383" y="517">Return application status</text>
+
+          <text class="step" x="22" y="573">10</text>
+          <path class="reply" d="M335 578 H110" marker-end="url(#seq-reply-arrow)" />
+          <text class="msg-label" x="141" y="569">Show reference and status</text>
+
+        </svg>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>Citizen Bank</span>
+      <span>Online Banking System</span>
+    </div>
+  </footer>
+  <script>
+    const loanTabs = [...document.querySelectorAll(".loan-tab")];
+    const loanScreens = [...document.querySelectorAll(".loan-screen")];
+    const loanForm = document.querySelector("#loan-form");
+
+    function showLoanScreen(name) {
+      loanTabs.forEach((tab) => {
+        const selected = tab.dataset.screen === name;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      });
+      loanScreens.forEach((screen) => {
+        screen.hidden = screen.id !== `screen-${name}`;
+      });
+    }
+
+    loanTabs.forEach((tab) => tab.addEventListener("click", () => showLoanScreen(tab.dataset.screen)));
+    document.querySelectorAll("[data-open-screen]").forEach((button) => {
+      button.addEventListener("click", () => showLoanScreen(button.dataset.openScreen));
+    });
+
+    loanForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!loanForm.reportValidity()) return;
+      const values = new FormData(loanForm);
+      const amount = new Intl.NumberFormat("en-RW").format(Number(values.get("amount")));
+      document.querySelector("#review-customer").textContent = values.get("customer-id");
+      document.querySelector("#review-account").textContent = values.get("account");
+      document.querySelector("#review-term").textContent = values.get("term");
+      document.querySelector("#review-purpose").textContent = values.get("purpose");
+      document.querySelector("#review-amount").textContent = `RWF ${amount}`;
+      document.querySelector("#status-amount").textContent = `RWF ${amount}`;
+      showLoanScreen("review");
+    });
+
+    document.querySelector("#confirm-loan").addEventListener("click", () => {
+      const reference = `LN-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+      document.querySelector("#loan-reference").textContent = reference;
+      showLoanScreen("status");
+    });
+
+    document.querySelector("#new-loan").addEventListener("click", () => {
+      loanForm.reset();
+      showLoanScreen("overview");
+    });
+  </script>
+</body>
+</html>

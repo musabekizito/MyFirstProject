@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LXT Primary School - System Design</title>
+    <style>
+        /* =========================================
+           GLOBAL STYLES
+        ========================================= */
+        :root {
+            --primary: #1e293b;
+            --primary-light: #334155;
+            --secondary: #0ea5e9;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-color: #f8fafc;
+            --border-color: #cbd5e1;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .section {
+            margin-bottom: 80px;
+            padding-bottom: 40px;
+            border-bottom: 2px dashed var(--border-color);
+        }
+        .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0;}
+
+        h1 { text-align: center; color: var(--primary); margin-bottom: 5px;}
+        .subtitle { text-align: center; color: var(--text-light); margin-bottom: 50px; font-size: 1.1em;}
+        h2 { color: var(--primary-light); border-bottom: 2px solid var(--primary-light); padding-bottom: 10px; margin-bottom: 30px;}
+        h3 { color: var(--text-dark); margin-top: 40px; margin-bottom: 20px;}
+
+        /* =========================================
+           PART A: DFD STYLES (Advanced)
+        ========================================= */
+        .diagram-canvas {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 40px;
+            overflow-x: auto;
+        }
+
+        /* Standard Shapes */
+        .node {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9em;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            z-index: 2;
+        }
+
+        /* External Entity (Rectangle) */
+        .entity {
+            background: white;
+            border: 3px solid var(--primary);
+            width: 160px;
+            height: 70px;
+            border-radius: 4px;
+            color: var(--primary);
+        }
+
+        /* Process (Circle/Oval) */
+        .process {
+            background: #e0f2fe;
+            border: 3px solid var(--secondary);
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            color: #0369a1;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        /* Data Store (Open Rectangle) */
+        .datastore {
+            background: white;
+            border: 2px solid var(--primary);
+            border-left: 15px solid var(--primary);
+            width: 180px;
+            height: 60px;
+            border-radius: 4px;
+            color: var(--primary);
+        }
+
+        /* Layout Containers for DFD */
+        .dfd-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .dfd-col { display: flex; flex-direction: column; gap: 15px; align-items: center;}
+
+        /* SVG Arrows */
+        .arrow-svg {
+            position: absolute;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .arrow-line { stroke: #64748b; stroke-width: 2.5; fill: none; }
+        .arrow-head { fill: #64748b; }
+        .arrow-label { 
+            position: absolute; 
+            background: white; 
+            padding: 2px 8px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 4px; 
+            font-size: 0.75em; 
+            color: var(--text-light);
+            font-weight: 600;
+            z-index: 3;
+        }
+
+        /* =========================================
+           PART B: ERD STYLES
+        ========================================= */
+        .erd-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            background: #f8fafc;
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .erd-table {
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            width: 240px;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+            z-index: 2;
+        }
+        
+        .erd-header {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .erd-row {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            background: white;
+        }
+        .erd-row:last-child { border-bottom: none; }
+        .erd-row:hover { background: #f1f5f9; }
+
+        .pk { font-weight: bold; text-decoration: underline; color: #0f172a;}
+        .fk { font-style: italic; color: var(--secondary); }
+        .type { color: var(--text-light); font-size: 0.85em; font-family: monospace;}
+
+        /* ERD Relationship Lines */
+        .erd-relation {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            flex-direction: column;
+            width: 120px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .erd-relation-line {
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+            position: relative;
+            margin: 5px 0;
+        }
+        .erd-relation-line::after {
+            content: '>';
+            position: absolute;
+            right: -5px;
+            top: -9px;
+            font-size: 18px;
+            color: var(--primary);
+        }
+        .erd-relation-line::before {
+            content: '|';
+            position: absolute;
+            left: 0;
+            top: -8px;
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        /* =========================================
+           PART C: UI INTERFACES (Figma Ready)
+        ========================================= */
+        .ui-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .ui-frame {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ui-top-bar {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .ui-body { padding: 25px; flex-grow: 1; }
+
+        .ui-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+        }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.85em;
+            color: var(--text-dark);
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.9em;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus { outline: none; border-color: var(--secondary); }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background-color: var(--secondary); width: 100%; }
+        .btn-success { background-color: var(--success); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-secondary { background-color: #94a3b8; }
+
+        .ui-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 10px;}
+        .ui-table th, .ui-table td { border-bottom: 1px solid var(--border-color); padding: 10px; text-align: left; }
+        .ui-table th { background-color: #f8fafc; font-weight: 600; color: var(--text-light);}
+        
+        .flex-row { display: flex; gap: 15px; }
+        .flex-row > * { flex: 1; }
+        
+        .dashboard-cards { display: flex; gap: 15px; }
+        .d-card { flex: 1; padding: 20px; border-radius: 8px; color: white; text-align: center; }
+        .d-card h3 { margin: 0 0 5px 0; font-size: 0.8em; opacity: 0.9;}
+        .d-card p { margin: 0; font-size: 1.6em; font-weight: bold;}
+
+        /* Professional diagrams for Questions A and B */
+        body {
+            background: #eef2f5;
+            padding: 32px 18px;
+        }
+        .container {
+            max-width: 1360px;
+            padding: 46px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, .08);
+        }
+        .page-kicker {
+            margin: 0;
+            color: #0f766e;
+            text-align: center;
+            font-size: .76em;
+            font-weight: 800;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+        .container > h1 { margin-top: 9px; font-size: clamp(2em, 4vw, 2.8em); letter-spacing: -.04em; }
+        .subtitle { margin: 9px auto 38px; max-width: 780px; font-size: 1em; }
+        .section {
+            margin-bottom: 48px;
+            padding: 0 0 42px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .section h2 {
+            margin: 0 0 8px;
+            padding: 0;
+            border: 0;
+            color: #14283b;
+            font-size: 1.55em;
+            letter-spacing: -.025em;
+        }
+        .section h3 { margin: 30px 0 10px; color: #243b53; font-size: 1.12em; }
+        .section-intro { margin: 0 0 17px; color: #64748b; font-size: .94em; }
+        .diagram-panel {
+            margin: 16px 0 24px;
+            padding: 22px;
+            overflow: hidden;
+            border: 1px solid #dfe7ef;
+            border-radius: 14px;
+            background: linear-gradient(145deg, #fbfdff, #f5f8fc);
+        }
+        .diagram-scroll { overflow-x: auto; }
+        .professional-diagram { display: block; width: 100%; height: auto; }
+        .level-one-diagram { min-width: 1000px; }
+        .diagram-node { fill: #fff; stroke: #36536d; stroke-width: 2; }
+        .diagram-process { fill: #e8f2f8; stroke: #27728a; stroke-width: 2.5; }
+        .diagram-data { fill: #fff; stroke: #648398; stroke-width: 2; }
+        .diagram-heading { font: 700 16px 'Segoe UI', Arial, sans-serif; fill: #14283b; }
+        .diagram-subheading { font: 600 12px 'Segoe UI', Arial, sans-serif; fill: #40576b; }
+        .diagram-small { font: 11px 'Segoe UI', Arial, sans-serif; fill: #627487; }
+        .diagram-process-number { font: 700 12px 'Segoe UI', Arial, sans-serif; fill: #27728a; }
+        .diagram-flow { fill: none; stroke: #536f83; stroke-width: 2; marker-end: url(#dfd0-arrow); }
+        .diagram-flow-one { fill: none; stroke: #536f83; stroke-width: 1.8; marker-end: url(#dfd1-arrow); }
+        .diagram-flow-label { font: 600 10px 'Segoe UI', Arial, sans-serif; fill: #334e62; }
+        .diagram-label-bg { fill: #fbfdff; stroke: #e1e8ef; stroke-width: .8; }
+        .diagram-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 13px; color: #526579; font-size: .82em; }
+        .legend-item { display: inline-flex; align-items: center; gap: 7px; }
+        .legend-box { width: 17px; height: 13px; border: 1.5px solid #36536d; background: white; }
+        .legend-process { width: 15px; height: 15px; border: 1.5px solid #27728a; border-radius: 50%; background: #e8f2f8; }
+        .legend-store { width: 18px; height: 12px; border-top: 2px solid #648398; border-bottom: 2px solid #648398; }
+        .diagram-note {
+            margin-top: 14px;
+            padding: 13px 15px;
+            border-left: 3px solid #0f766e;
+            border-radius: 0 8px 8px 0;
+            background: #eff8f6;
+            color: #3e5a56;
+            font-size: .88em;
+            line-height: 1.65;
+        }
+        .erd-diagram { min-width: 760px; }
+        .erd-entity { fill: #fff; stroke: #36536d; stroke-width: 1.7; }
+        .erd-entity-header { fill: #183b56; }
+        .erd-header-text { font: 700 13px 'Segoe UI', Arial, sans-serif; fill: #fff; letter-spacing: .04em; }
+        .erd-attribute { font: 11px 'Segoe UI', Arial, sans-serif; fill: #263d50; }
+        .erd-key { font: 700 9px 'Segoe UI', Arial, sans-serif; fill: #0f766e; }
+        .erd-type { font: 10px Consolas, monospace; fill: #748396; }
+        .erd-row-line { stroke: #e7edf2; stroke-width: 1; }
+        .erd-relation-line { fill: none; stroke: #0f766e; stroke-width: 2; }
+        .erd-relation-label { font: 600 10px 'Segoe UI', Arial, sans-serif; fill: #456457; }
+        .erd-cardinality { font: 700 11px 'Segoe UI', Arial, sans-serif; fill: #0f766e; }
+        .erd-small { font: 10px 'Segoe UI', Arial, sans-serif; fill: #627487; }
+        @media (max-width: 760px) {
+            body { padding: 12px; }
+            .container { padding: 26px 18px; }
+            .diagram-panel { padding: 13px; }
+            .diagram-legend { gap: 10px; }
+        }
+        @media print {
+            body { padding: 0; background: white; }
+            .container { max-width: none; padding: 10mm; border: 0; box-shadow: none; }
+            .diagram-panel { break-inside: avoid; background: white; }
+            .section { break-inside: avoid; }
+            .section:last-child { break-inside: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <p class="page-kicker">System analysis &amp; database design</p>
+    <h1>LXT Primary School - Inventory System</h1>
+    <p class="subtitle">Professional system design · Integrated Situation · 20 December 2024 · Database: <strong>Saint_Anne</strong></p>
+
+    <!-- ==========================================
+         PART A: DFD
+    =========================================== -->
+    <div class="section">
+        <h2>a. Data Flow Diagrams (DFD)</h2>
+        <p class="section-intro">The context diagram shows the system boundary; the Level 1 diagram decomposes the system into its main processes and persistent data stores.</p>
+
+        <h3>DFD Level 0 — Context Diagram</h3>
+        <p class="section-intro">One external entity exchanges data with the complete Saint Anne stock management system. Internal data stores are omitted at this level.</p>
+        <div class="diagram-panel">
+            <div class="diagram-scroll">
+                <svg class="professional-diagram" viewBox="0 0 1100 390" role="img" aria-labelledby="dfd0-title dfd0-desc">
+                    <title id="dfd0-title">Level 0 context diagram for the Saint Anne school stock system</title>
+                    <desc id="dfd0-desc">The Kitchen and Stock Chief submits credentials, product data, stock transactions, and report dates. The system returns login status, stock status, and period reports.</desc>
+                    <defs>
+                        <marker id="dfd0-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5 0 10z" fill="#536f83"/></marker>
+                    </defs>
+                    <rect class="diagram-node" x="72" y="142" width="230" height="100" rx="8"/>
+                    <text class="diagram-heading" x="187" y="181" text-anchor="middle">Kitchen &amp; Stock Chief</text>
+                    <text class="diagram-small" x="187" y="205" text-anchor="middle">External entity · system user</text>
+                    <circle class="diagram-process" cx="760" cy="192" r="112"/>
+                    <text class="diagram-process-number" x="760" y="151" text-anchor="middle">PROCESS 0</text>
+                    <text class="diagram-heading" x="760" y="181" text-anchor="middle">Saint Anne School</text>
+                    <text class="diagram-heading" x="760" y="205" text-anchor="middle">Stock Management System</text>
+                    <text class="diagram-small" x="760" y="230" text-anchor="middle">Saint_Anne database</text>
+
+                    <path class="diagram-flow" d="M302 164 C420 76 617 82 666 131"/>
+                    <rect class="diagram-label-bg" x="350" y="75" width="258" height="37" rx="6"/>
+                    <text class="diagram-flow-label" x="479" y="90" text-anchor="middle">Username &amp; password; product details;</text>
+                    <text class="diagram-flow-label" x="479" y="104" text-anchor="middle">stock-in / stock-out data; report date range</text>
+
+                    <path class="diagram-flow" d="M666 246 C602 312 410 314 302 220"/>
+                    <rect class="diagram-label-bg" x="371" y="277" width="244" height="34" rx="6"/>
+                    <text class="diagram-flow-label" x="493" y="291" text-anchor="middle">Login result, product confirmation,</text>
+                    <text class="diagram-flow-label" x="493" y="304" text-anchor="middle">stock status &amp; period reports</text>
+                </svg>
+            </div>
+            <div class="diagram-legend">
+                <span class="legend-item"><i class="legend-box"></i>External entity</span>
+                <span class="legend-item"><i class="legend-process"></i>System process</span>
+                <span class="legend-item">Arrow direction indicates data-flow direction</span>
+            </div>
+        </div>
+
+        <h3>DFD Level 1 — Process Decomposition</h3>
+        <p class="section-intro">Process 0 is decomposed into authentication, product maintenance, stock movement recording, and period-report generation.</p>
+        <div class="diagram-panel">
+            <div class="diagram-scroll">
+                <svg class="professional-diagram level-one-diagram" viewBox="0 0 1320 760" role="img" aria-labelledby="dfd1-title dfd1-desc">
+                    <title id="dfd1-title">Level 1 data flow diagram for the Saint Anne stock system</title>
+                    <desc id="dfd1-desc">The Kitchen and Stock Chief interacts with four processes: authenticate, manage products, record stock movements, and generate reports. Processes use Users, Products, Stock In, and Stock Out stores.</desc>
+                    <defs>
+                        <marker id="dfd1-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5 0 9z" fill="#536f83"/></marker>
+                    </defs>
+
+                    <rect class="diagram-node" x="28" y="320" width="180" height="100" rx="8"/>
+                    <text class="diagram-heading" x="118" y="358" text-anchor="middle">Kitchen &amp;</text>
+                    <text class="diagram-heading" x="118" y="380" text-anchor="middle">Stock Chief</text>
+                    <text class="diagram-small" x="118" y="400" text-anchor="middle">External entity</text>
+
+                    <circle class="diagram-process" cx="360" cy="125" r="68"/>
+                    <text class="diagram-process-number" x="360" y="104" text-anchor="middle">PROCESS 1.0</text>
+                    <text class="diagram-subheading" x="360" y="128" text-anchor="middle">Authenticate</text>
+                    <text class="diagram-subheading" x="360" y="146" text-anchor="middle">user</text>
+
+                    <circle class="diagram-process" cx="620" cy="130" r="72"/>
+                    <text class="diagram-process-number" x="620" y="107" text-anchor="middle">PROCESS 2.0</text>
+                    <text class="diagram-subheading" x="620" y="132" text-anchor="middle">Manage</text>
+                    <text class="diagram-subheading" x="620" y="151" text-anchor="middle">products</text>
+
+                    <circle class="diagram-process" cx="620" cy="405" r="78"/>
+                    <text class="diagram-process-number" x="620" y="380" text-anchor="middle">PROCESS 3.0</text>
+                    <text class="diagram-subheading" x="620" y="405" text-anchor="middle">Record stock</text>
+                    <text class="diagram-subheading" x="620" y="425" text-anchor="middle">in / stock out</text>
+
+                    <circle class="diagram-process" cx="940" cy="405" r="80"/>
+                    <text class="diagram-process-number" x="940" y="378" text-anchor="middle">PROCESS 4.0</text>
+                    <text class="diagram-subheading" x="940" y="403" text-anchor="middle">Generate stock</text>
+                    <text class="diagram-subheading" x="940" y="423" text-anchor="middle">&amp; cost report</text>
+
+                    <path class="diagram-data" d="M1100 64h188M1100 64v54M1100 118h188"/>
+                    <text class="diagram-subheading" x="1194" y="89" text-anchor="middle">D1 · USERS</text>
+                    <text class="diagram-small" x="1194" y="107" text-anchor="middle">Account credentials</text>
+
+                    <path class="diagram-data" d="M1100 202h188M1100 202v54M1100 256h188"/>
+                    <text class="diagram-subheading" x="1194" y="227" text-anchor="middle">D2 · PRODUCTS</text>
+                    <text class="diagram-small" x="1194" y="245" text-anchor="middle">Product catalog</text>
+
+                    <path class="diagram-data" d="M1100 345h188M1100 345v54M1100 399h188"/>
+                    <text class="diagram-subheading" x="1194" y="370" text-anchor="middle">D3 · STOCK_IN</text>
+                    <text class="diagram-small" x="1194" y="388" text-anchor="middle">Purchase records</text>
+
+                    <path class="diagram-data" d="M1100 492h188M1100 492v54M1100 546h188"/>
+                    <text class="diagram-subheading" x="1194" y="517" text-anchor="middle">D4 · STOCK_OUT</text>
+                    <text class="diagram-small" x="1194" y="535" text-anchor="middle">Kitchen usage records</text>
+
+                    <path class="diagram-flow-one" d="M208 333 C260 270 285 208 310 179"/>
+                    <rect class="diagram-label-bg" x="208" y="242" width="115" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="265" y="257" text-anchor="middle">Username, password</text>
+                    <path class="diagram-flow-one" d="M315 171 C278 232 250 291 208 350"/>
+                    <rect class="diagram-label-bg" x="213" y="277" width="99" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="262" y="292" text-anchor="middle">Login result</text>
+
+                    <path class="diagram-flow-one" d="M208 345 C330 272 438 185 553 152"/>
+                    <rect class="diagram-label-bg" x="341" y="218" width="160" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="421" y="233" text-anchor="middle">Add / update / delete product</text>
+                    <path class="diagram-flow-one" d="M553 167 C445 228 327 307 208 365"/>
+                    <rect class="diagram-label-bg" x="352" y="257" width="149" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="426" y="272" text-anchor="middle">Catalog / save confirmation</text>
+
+                    <path class="diagram-flow-one" d="M208 370 C320 380 421 393 542 400"/>
+                    <rect class="diagram-label-bg" x="310" y="354" width="170" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="395" y="369" text-anchor="middle">Purchase and usage details</text>
+                    <path class="diagram-flow-one" d="M542 423 C416 433 313 411 208 391"/>
+                    <rect class="diagram-label-bg" x="312" y="422" width="169" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="396" y="437" text-anchor="middle">Validation / updated balance</text>
+
+                    <path class="diagram-flow-one" d="M208 399 C377 590 645 618 872 463"/>
+                    <rect class="diagram-label-bg" x="454" y="563" width="175" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="541" y="578" text-anchor="middle">Report request: start / end date</text>
+                    <path class="diagram-flow-one" d="M870 438 C648 630 381 605 208 414"/>
+                    <rect class="diagram-label-bg" x="555" y="606" width="209" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="659" y="621" text-anchor="middle">Stock status &amp; expenditure report</text>
+
+                    <path class="diagram-flow-one" d="M1100 83 C918 29 628 31 428 108"/>
+                    <rect class="diagram-label-bg" x="683" y="45" width="165" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="765" y="60" text-anchor="middle">Stored credential record</text>
+
+                    <path class="diagram-flow-one" d="M690 145 C817 163 955 197 1100 218"/>
+                    <rect class="diagram-label-bg" x="818" y="170" width="137" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="886" y="185" text-anchor="middle">Save product changes</text>
+                    <path class="diagram-flow-one" d="M1100 239 C955 230 817 194 690 163"/>
+                    <rect class="diagram-label-bg" x="817" y="211" width="140" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="887" y="226" text-anchor="middle">Product catalog record</text>
+                    <path class="diagram-flow-one" d="M1100 244 C954 267 818 314 695 363"/>
+                    <rect class="diagram-label-bg" x="829" y="294" width="151" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="904" y="309" text-anchor="middle">Validate Product_Id</text>
+
+                    <path class="diagram-flow-one" d="M698 379 C839 355 964 369 1100 371"/>
+                    <rect class="diagram-label-bg" x="820" y="345" width="153" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="896" y="360" text-anchor="middle">Save stock-in record</text>
+                    <path class="diagram-flow-one" d="M698 438 C837 482 964 514 1100 519"/>
+                    <rect class="diagram-label-bg" x="814" y="477" width="159" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="893" y="492" text-anchor="middle">Save stock-out record</text>
+
+                    <path class="diagram-flow-one" d="M1100 231 C1057 275 1023 327 992 353"/>
+                    <rect class="diagram-label-bg" x="1001" y="286" width="91" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="1046" y="301" text-anchor="middle">Product list</text>
+                    <path class="diagram-flow-one" d="M1100 374 C1058 377 1032 383 1019 388"/>
+                    <rect class="diagram-label-bg" x="1021" y="351" width="67" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="1054" y="366" text-anchor="middle">Read IN</text>
+                    <path class="diagram-flow-one" d="M1100 522 C1051 501 1031 475 1017 456"/>
+                    <rect class="diagram-label-bg" x="1020" y="481" width="76" height="22" rx="5"/>
+                    <text class="diagram-flow-label" x="1058" y="496" text-anchor="middle">Read OUT</text>
+                </svg>
+            </div>
+            <div class="diagram-legend">
+                <span class="legend-item"><i class="legend-box"></i>External entity</span>
+                <span class="legend-item"><i class="legend-process"></i>Process</span>
+                <span class="legend-item"><i class="legend-store"></i>Data store</span>
+                <span class="legend-item">Labeled arrows show named data flows</span>
+            </div>
+            <div class="diagram-note"><strong>Data stores:</strong> D1 Users, D2 Products, D3 Stock_In, and D4 Stock_Out. Report generation reads the product catalog and stock movement records. Total purchase cost is quantity × unit price; stock balance is total stock-in quantity − total stock-out quantity.</div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         PART B: ERD
+    =========================================== -->
+    <div class="section">
+        <h2>b. Entity Relationship Diagram (ERD)</h2>
+        <p class="section-intro">Relational design for the <strong>Saint_Anne</strong> database. Each stock transaction references one product; each product may have multiple stock-in and stock-out transactions.</p>
+        <div class="diagram-panel">
+            <div class="diagram-scroll">
+                <svg class="professional-diagram erd-diagram" viewBox="0 0 1120 600" role="img" aria-labelledby="erd-title erd-desc">
+                    <title id="erd-title">Entity relationship diagram for the Saint Anne inventory database</title>
+                    <desc id="erd-desc">Users stores login credentials. Products has one-to-many relationships with Stock_In and Stock_Out. Stock transaction records each have their own primary key and a Product_Id foreign key.</desc>
+
+                    <path class="erd-relation-line" d="M600 201 H760"/>
+                    <path class="erd-relation-line" d="M600 256 C675 320 684 414 760 438"/>
+                    <text class="erd-cardinality" x="618" y="191">1</text>
+                    <text class="erd-cardinality" x="735" y="191">0..*</text>
+                    <text class="erd-cardinality" x="618" y="270">1</text>
+                    <text class="erd-cardinality" x="735" y="430">0..*</text>
+                    <rect class="diagram-label-bg" x="635" y="168" width="105" height="20" rx="5"/>
+                    <text class="erd-relation-label" x="687" y="182" text-anchor="middle">has purchases</text>
+                    <rect class="diagram-label-bg" x="629" y="315" width="116" height="20" rx="5"/>
+                    <text class="erd-relation-label" x="687" y="329" text-anchor="middle">has usage records</text>
+
+                    <g aria-label="Users entity">
+                        <rect class="erd-entity" x="45" y="188" width="270" height="176" rx="8"/>
+                        <path class="erd-entity-header" d="M53 188h254a8 8 0 0 1 8 8v32H45v-32a8 8 0 0 1 8-8z"/>
+                        <text class="erd-header-text" x="180" y="211" text-anchor="middle">USERS</text>
+                        <path class="erd-row-line" d="M45 260h270M45 295h270M45 330h270"/>
+                        <text class="erd-key" x="62" y="250">PK</text><text class="erd-attribute" x="110" y="250">User_Id</text><text class="erd-type" x="295" y="250" text-anchor="end">INT</text>
+                        <text class="erd-key" x="62" y="285">UQ</text><text class="erd-attribute" x="110" y="285">UserName</text><text class="erd-type" x="295" y="285" text-anchor="end">VARCHAR(50)</text>
+                        <text class="erd-key" x="62" y="320">—</text><text class="erd-attribute" x="110" y="320">Password_Hash</text><text class="erd-type" x="295" y="320" text-anchor="end">VARCHAR(255)</text>
+                        <text class="erd-small" x="180" y="351" text-anchor="middle">Login account</text>
+                    </g>
+
+                    <g aria-label="Products entity">
+                        <rect class="erd-entity" x="350" y="118" width="250" height="208" rx="8"/>
+                        <path class="erd-entity-header" d="M358 118h234a8 8 0 0 1 8 8v32H350v-32a8 8 0 0 1 8-8z"/>
+                        <text class="erd-header-text" x="475" y="141" text-anchor="middle">PRODUCTS</text>
+                        <path class="erd-row-line" d="M350 193h250M350 228h250M350 263h250M350 298h250"/>
+                        <text class="erd-key" x="367" y="183">PK</text><text class="erd-attribute" x="415" y="183">Product_Id</text><text class="erd-type" x="580" y="183" text-anchor="end">INT</text>
+                        <text class="erd-key" x="367" y="218">UQ</text><text class="erd-attribute" x="415" y="218">Product_Name</text><text class="erd-type" x="580" y="218" text-anchor="end">VARCHAR(100)</text>
+                        <text class="erd-key" x="367" y="253">—</text><text class="erd-attribute" x="415" y="253">Unit</text><text class="erd-type" x="580" y="253" text-anchor="end">VARCHAR(20)</text>
+                        <text class="erd-key" x="367" y="288">—</text><text class="erd-attribute" x="415" y="288">Category</text><text class="erd-type" x="580" y="288" text-anchor="end">VARCHAR(50)</text>
+                        <text class="erd-small" x="475" y="318" text-anchor="middle">Parent record for stock transactions</text>
+                    </g>
+
+                    <g aria-label="Stock In entity">
+                        <rect class="erd-entity" x="760" y="55" width="315" height="263" rx="8"/>
+                        <path class="erd-entity-header" d="M768 55h299a8 8 0 0 1 8 8v32H760V63a8 8 0 0 1 8-8z"/>
+                        <text class="erd-header-text" x="917" y="78" text-anchor="middle">STOCK_IN</text>
+                        <path class="erd-row-line" d="M760 130h315M760 165h315M760 200h315M760 235h315M760 270h315"/>
+                        <text class="erd-key" x="777" y="120">PK</text><text class="erd-attribute" x="825" y="120">StockIn_Id</text><text class="erd-type" x="1055" y="120" text-anchor="end">INT</text>
+                        <text class="erd-key" x="777" y="155">FK</text><text class="erd-attribute" x="825" y="155">Product_Id</text><text class="erd-type" x="1055" y="155" text-anchor="end">INT</text>
+                        <text class="erd-key" x="777" y="190">—</text><text class="erd-attribute" x="825" y="190">Date</text><text class="erd-type" x="1055" y="190" text-anchor="end">DATE</text>
+                        <text class="erd-key" x="777" y="225">—</text><text class="erd-attribute" x="825" y="225">Quantity</text><text class="erd-type" x="1055" y="225" text-anchor="end">DECIMAL(10,2)</text>
+                        <text class="erd-key" x="777" y="260">—</text><text class="erd-attribute" x="825" y="260">Unit_Price</text><text class="erd-type" x="1055" y="260" text-anchor="end">DECIMAL(12,2)</text>
+                        <text class="erd-key" x="777" y="295">—</text><text class="erd-attribute" x="825" y="295">Total_Price</text><text class="erd-type" x="1055" y="295" text-anchor="end">DECIMAL(14,2)</text>
+                    </g>
+
+                    <g aria-label="Stock Out entity">
+                        <rect class="erd-entity" x="760" y="368" width="315" height="193" rx="8"/>
+                        <path class="erd-entity-header" d="M768 368h299a8 8 0 0 1 8 8v32H760v-32a8 8 0 0 1 8-8z"/>
+                        <text class="erd-header-text" x="917" y="391" text-anchor="middle">STOCK_OUT</text>
+                        <path class="erd-row-line" d="M760 443h315M760 478h315M760 513h315"/>
+                        <text class="erd-key" x="777" y="433">PK</text><text class="erd-attribute" x="825" y="433">StockOut_Id</text><text class="erd-type" x="1055" y="433" text-anchor="end">INT</text>
+                        <text class="erd-key" x="777" y="468">FK</text><text class="erd-attribute" x="825" y="468">Product_Id</text><text class="erd-type" x="1055" y="468" text-anchor="end">INT</text>
+                        <text class="erd-key" x="777" y="503">—</text><text class="erd-attribute" x="825" y="503">Date</text><text class="erd-type" x="1055" y="503" text-anchor="end">DATE</text>
+                        <text class="erd-key" x="777" y="538">—</text><text class="erd-attribute" x="825" y="538">Quantity</text><text class="erd-type" x="1055" y="538" text-anchor="end">DECIMAL(10,2)</text>
+                    </g>
+
+                    <rect class="diagram-label-bg" x="45" y="398" width="270" height="62" rx="7"/>
+                    <text class="erd-relation-label" x="60" y="420">Authentication table only.</text>
+                    <text class="diagram-small" x="60" y="440">No transaction-user relationship was specified</text>
+                    <text class="diagram-small" x="60" y="454">in the requirements.</text>
+                </svg>
+            </div>
+            <div class="diagram-legend">
+                <span class="legend-item"><strong>PK</strong> Primary key</span>
+                <span class="legend-item"><strong>FK</strong> Foreign key</span>
+                <span class="legend-item"><strong>UQ</strong> Unique value</span>
+                <span class="legend-item"><strong>1 → 0..*</strong> One product can have zero or many movement records</span>
+            </div>
+            <div class="diagram-note"><strong>Design notes:</strong> StockIn_Id and StockOut_Id are added as transaction primary keys so each movement has a unique identifier. Product_Id in both transaction tables is a foreign key to Products.Product_Id. Total_Price = Quantity × Unit_Price. Password_Hash represents a securely hashed password, not a plain-text password. User is kept separate because the given requirements do not specify which staff member records each transaction.</div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         PART C: INTERFACES
+    =========================================== -->
+    <div class="section">
+        <h2>c. 10 Interfaces of Logical Flow</h2>
+        <p style="color: var(--text-light); margin-bottom: 20px;">
+            These interfaces are built with clean HTML/CSS grids. You can easily copy/paste them into Figma to edit them as native layers.
+        </p>
+        
+        <div class="ui-gallery">
+
+            <!-- 1. LOGIN -->
+            <div class="ui-frame">
+                <div class="ui-top-bar" style="justify-content: center;">LXT Inventory System</div>
+                <div class="ui-body">
+                    <div class="ui-title" style="text-align: center;">Welcome Back</div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" class="form-control" placeholder="Enter username">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" class="form-control" placeholder="Enter password">
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 10px;">Login</button>
+                </div>
+            </div>
+
+            <!-- 2. DASHBOARD -->
+            <div class="ui-frame">
+                <div class="ui-top-bar"><span>Dashboard</span><span>Logout</span></div>
+                <div class="ui-body">
+                    <div class="ui-title">System Overview</div>
+                    <div class="dashboard-cards">
+                        <div class="d-card" style="background: #3b82f6;">
+                            <h3>Total Products</h3><p>25</p>
+                        </div>
+                        <div class="d-card" style="background: #10b981;">
+                            <h3>Stock In (Week)</h3><p>1,500</p>
+                        </div>
+                        <div class="d-card" style="background: #ef4444;">
+                            <h3>Stock Out (Week)</h3><p>1,200</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. PRODUCT LIST -->
+            <div class="ui-frame">
+                <div class="ui-top-bar"><span>Products</span><span>Logout</span></div>
+                <div class="ui-body">
+                    <div class="ui-title">Manage Products</div>
+                    <div class="flex-row" style="margin-bottom: 15px;">
+                        <input type="text" class="form-control" placeholder="Search...">
+                        <button class="btn btn-success" style="white-space: nowrap;">+ Add New</button>
+                    </div>
+                    <table class="ui-table">
+                        <tr><th>ID</th><th>Name</th><th>Actions</th></tr>
+                        <tr><td>P01</td><td>Potatoes</td><td><button class="btn btn-primary" style="padding: 5px 10px; width: auto;">Edit</button></td></tr>
+                        <tr><td>P02</td><td>Maize</td><td><button class="btn btn-primary" style="padding: 5px 10px; width: auto;">Edit</button></td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. ADD PRODUCT -->
+            <div class="ui-frame">
+                <div class="ui-top-bar"><span>Add Product</span><span>Logout</span></div>
+                <div class="ui-body">
+                    <div class="ui-title">Product Details</div>
+                    <div class="form-group">
+                        <label>Product ID</label>
+                        <input type="text" class="form-control" value="P06 (Auto)" readonly style="background: #f1f5f9;">
+                    </div>
+                    <div class="form-group">
+                        <label>Product Name</label>
+                        <input type="text" class="form-control" placeholder="e.g. Vegetables">
+                    </div>
+                    <div class="flex-row">
+                        <button class="btn btn-success">Save</button>
+                        <button class="btn btn-secondary">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. STOCK IN -->
+            <div class="ui-frame">
+                <div class="ui-top-bar"><span>Record Stock In</span><span>Logout</span></div>
+                <div class="ui-body">
+                    <div class="ui-title">Bought Products</div>
+                    <div class="form-group">
+                        <label>Select Product</label>
+                        <select class="form-control"><option>Potatoes</option><option>Maize</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" class="form-control" value="2024-12-20">
+                    </div>
+                    <div class="flex-row">
+                        <div class="form-group"><label>Qty (Kg)</label><input type="number" class="form-control" placeholder="0"></div>
+                        <div class="form-group"><label>Unit Price</label><input type="number" class="form-control" placeholder="0"></div>
+                    </div>
+                    <button class="btn btn-primary">Submit Stock In</button>
+                </div>
+            </div>
+
+            <!-- 6. STOCK OUT -->
+            <div class="ui-frame">
+                <div class="ui-top-bar"><span>Record Stock Out</span><span>Logout</span></div>
+                <div class="ui-body">
+                    <div class="ui-title">Used Products</div>
+                    <div class="form-group">
+                        <label>Select Product</label>
+                        <select class="form-control"><option>Beans</option><option>Rice</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" class="form-control" value="2024-12-20">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity Used (Kg)</label>
+                        <input type="number" class="form-control" placeholder="0">
+                    </div>
+                    <button class="btn btn-danger" style="width: 100%;">Submit Stock Out</button>
+                </div>
+            </div>
+
+            <!-- 7. STOCK REPORT -->
+            <div class="ui-frame">
+                <div class="ui-top-bar"><span>Reports: Status</span><span>Logout</span></div>
+                <div class="ui-body">
+                    <div class="ui-title">Current Inventory</div>
+                    <table class="ui-table">
+                        <tr><th>Product</th><th>In</th><th>Out</th><th>Balance</th></tr>
+                        <tr><td>Potatoes</td><td>500</td><td>300</td><td style="color: var(--success); font-weight: bold;">200</td></tr>
+                        <tr><td>Rice</td><td>600</td><td>550</td><td style="color: var(--danger); font-weight: bold;">50</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 8. FINANCIAL REPORT -->
+            <div class="ui-frame">
+                <div class="ui-top-bar"><span>Reports: Money</span><span>Logout</span></div>
+                <div class="ui-body">
+                    <div class="ui-title">Financial Report</div>
+                    <div class="flex-row" style="margin-bottom: 15px;">
+                        <div class="form-group"><label>Start Date</label><input type="date" class="form-control" value="2024-12-14"></div>
+                        <div class="form-group"><label>End Date</label><input type="date" class="form-control" value="2024-12-20"></div>
+                    </div>
+                    <button class="btn btn-primary" style="margin-bottom: 15px;">Generate</button>
+                    <table class="ui-table">
+                        <tr><th>Date</th><th>Product</th><th>Total Cost</th></tr>
+                        <tr><td>Dec 15</td><td>Potatoes</td><td>60,000 RWF</td></tr>
+                        <tr><td colspan="2" style="text-align: right; font-weight: bold;">Total:</td><td style="font-weight: bold;">60,000 RWF</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 9. SETTINGS -->
+            <div class="ui-frame">
+                <div class="ui-top-bar"><span>Settings</span><span>Logout</span></div>
+                <div class="ui-body">
+                    <div class="ui-title">Update Profile</div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" class="form-control" value="stock_chief_lxt">
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" class="form-control" placeholder="Enter new password">
+                    </div>
+                    <button class="btn btn-success" style="width: 100%;">Save Changes</button>
+                </div>
+            </div>
+
+            <!-- 10. TRANSACTION LOGS -->
+            <div class="ui-frame">
+                <div class="ui-top-bar"><span>System Logs</span><span>Logout</span></div>
+                <div class="ui-body">
+                    <div class="ui-title">Transaction History</div>
+                    <table class="ui-table">
+                        <tr><th>Date</th><th>Type</th><th>Product</th><th>Qty</th></tr>
+                        <tr><td>Dec 20</td><td style="color: var(--success); font-weight: bold;">IN</td><td>Beans</td><td>150 Kg</td></tr>
+                        <tr><td>Dec 20</td><td style="color: var(--danger); font-weight: bold;">OUT</td><td>Beans</td><td>50 Kg</td></tr>
+                        <tr><td>Dec 19</td><td style="color: var(--success); font-weight: bold;">IN</td><td>Rice</td><td>300 Kg</td></tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
